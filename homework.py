@@ -9,25 +9,22 @@ class Calculator:
         self.records = []
 
     def add_record(self, record):
-        return self.records.append(record)
+        self.records.append(record)
 
     def get_today_stats(self):
         today_date = dt.date.today()
-        today_sum = sum(
+        return sum(
             record.amount for record in self.records
             if record.date == today_date
         )
-        return today_sum
 
     def get_week_stats(self):
         today_date = dt.date.today()
-        seven_days = dt.timedelta(days=7)
-        week_ago = today_date - seven_days
-        week_sum = sum(
+        week_ago = today_date - dt.timedelta(days=7)
+        return sum(
             day.amount for day in self.records
             if week_ago < day.date <= today_date
         )
-        return week_sum
 
 
 class Record:
@@ -45,17 +42,17 @@ class Record:
 
 
 class CaloriesCalculator(Calculator):
-    A = (
+    THIN = (
         'Сегодня можно съесть что-нибудь ещё,'
-        ' но с общей калорийностью не более {val} кКал'
+        ' но с общей калорийностью не более {value} кКал'
     )
-    B = ('Хватит есть!')
+    FAT = ('Хватит есть!')
 
     def get_calories_remained(self):
         remained = self.limit - self.get_today_stats()
         if remained > 0:
-            return self.A.format(val=remained)
-        return self.B
+            return self.THIN.format(value=remained)
+        return self.FAT
 
 
 class CashCalculator(Calculator):
@@ -66,28 +63,28 @@ class CashCalculator(Calculator):
         "usd": (USD_RATE, "USD"),
         "eur": (EURO_RATE, "Euro")
     }
-    C = ('Валюта "{val}" не поддерживается')
-    D = ('Денег нет, держись')
-    E = ('На сегодня осталось {val1} {val2}')
-    F = ('Денег нет, держись: твой долг - {val1} {val2}')
+    VALUE = ('Валюта "{value}" не поддерживается')
+    LIMIT = ('Денег нет, держись')
+    RICH = ('На сегодня осталось {value} {name}')
+    CREDIT = ('Денег нет, держись: твой долг - {value} {name}')
 
     def get_today_cash_remained(self, currency):
         if currency not in self.CURRENCIES:
-            raise ValueError(self.C.format(val=currency))
-        currencies_value = self.CURRENCIES[currency][1]
+            raise ValueError(self.VALUE.format(value=currency))
+        if self.limit == self.get_today_stats():
+            return self.LIMIT
+        rate, price = self.CURRENCIES[currency]
         today_balance = self.limit - self.get_today_stats()
-        if today_balance == 0:
-            return self.D
         currency_balance = round(
-            today_balance / self.CURRENCIES[currency][0], 2
+            today_balance / rate, 2
         )
         if today_balance > 0:
-            return self.E.format(
-                val1=currency_balance, val2=currencies_value
+            return self.RICH.format(
+                value=currency_balance, name=price
             )
         currency_credit = abs(currency_balance)
-        return self.F.format(
-            val1=currency_credit, val2=currencies_value
+        return self.CREDIT.format(
+            value=currency_credit, name=price
         )
 
 
